@@ -1,0 +1,65 @@
+---
+title: "Drug Interaction"
+author: "Huy Pham"
+date: "February 15, 2017"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+
+This presentation show some ideas in my Shiny app about drug interaction
+
+This app help you check the interaction between 2 drugs based on the RxNorm database
+
+## Getting and cleaning data - Part 1
+
+Firstly, you must type the name of two drugs in the left sidebar
+
+An R function will find the RxId of this drugs
+
+```{r}
+getRxId <- function(name) {
+  baseLink <- paste0("https://rxnav.nlm.nih.gov/REST/rxcui.json?name=", name)
+  f <- rjson::fromJSON(file=baseLink)
+  return(f$idGroup$rxnormId)
+}
+
+getRxId("ezetimibe")
+```
+
+## Getting and cleaning data - Part 2
+
+The function getInteractionPair will parse the result from the RxNorm database and extract the essential information.
+
+```{r}
+getInteractionPair <- function(drug1, drug2) {
+  baseLink <- paste0("https://rxnav.nlm.nih.gov/REST/interaction/list.json?rxcuis=", getRxId(drug1), "+", getRxId(drug2))
+  f <- rjson::fromJSON(file=baseLink)
+  return(f$fullInteractionTypeGroup[[1]]$fullInteractionType[[1]]$interactionPair[[1]])
+}
+
+getInteractionPair("ezetimibe", "gramicidin")[c("severity","description")]
+```
+
+
+## Example
+
+You can try some example:
+
+* Verapamil vs Digoxin
+* Warfarin vs Phenytoin
+
+The result can be NA if there is no the information in the database.
+
+
+## Disclaimer and Citation
+
+[1] RxNorm: https://rxnav.nlm.nih.gov/InteractionAPIs.html
+
+[2] DrugBank Disclaimer: DrugBank is intended for educational and scientific research purposes only and you expressly acknowledge and agree that use of DrugBank is at your sole risk. The accuracy of DrugBank information is not guaranteed and reliance on DrugBank shall be at your sole risk. DrugBank is not intended as a substitute for professional medical advice, diagnosis or treatment.
+
+[3] DrugBank: Wishart DS, Knox C, Guo AC, Shrivastava S, Hassanali M, Stothard P, Chang Z, Woolsey J. DrugBank: a comprehensive resource for in silico drug discovery and exploration. Nucleic Acids Res. 2006 Jan 1;34(Database issue):D668-72. 16381955
